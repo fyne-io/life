@@ -2,6 +2,8 @@ package main
 
 type board struct {
 	cells         [][]bool
+	nextGenCells         [][]bool
+	ch chan bool
 	generation    int
 	width, height int
 }
@@ -39,42 +41,39 @@ func (b *board) countNeighbours(x, y int) int {
 }
 
 func (b *board) nextGen() {
-	state := b.computeNextGen()
+	b.computeNextGen()
 	b.generation++
-
-	for y := 0; y < b.height; y++ {
-		for x := 0; x < b.width; x++ {
-			b.cells[y][x] = state[y][x]
-		}
-	}
+	b.nextGenCells, b.cells = b.cells, b.nextGenCells
 }
 
-func (b *board) computeNextGen() [][]bool {
-	state := make([][]bool, b.height)
-
-	for y := 0; y < b.height; y++ {
-		state[y] = make([]bool, b.width)
-
-		for x := 0; x < b.width; x++ {
-			n := b.countNeighbours(x, y)
-
-			if b.cells[y][x] {
-				state[y][x] = n == 2 || n == 3
-			} else {
-				state[y][x] = n == 3
-			}
+func (b *board) computeNextGen() {
+	width, height := b.width, b.height
+	for y := 0; y < height; y++ {
+		for x := 0; x < width; x++ {
+			go func(x,y int) {
+				n := b.countNeighbours(x, y)
+				if b.cells[y][x] {
+					b.nextGenCells[y][x] = n == 2 || n == 3
+				} else {
+					b.nextGenCells[y][x] = n == 3
+				}
+				b.ch<-true
+			}(x,y)
 		}
 	}
-
-	return state
+	count := height * width
+	for i := 0; i < count; i++ {
+		<-b.ch
+	}
 }
 
 func (b *board) createGrid(w, h int) {
 	b.cells = make([][]bool, h)
+	b.nextGenCells =  make([][]bool, h)
 	for y := 0; y < h; y++ {
 		b.cells[y] = make([]bool, w)
+		b.nextGenCells[y] = make([]bool, w)
 	}
-
 	b.width = w
 	b.height = h
 }
@@ -88,16 +87,19 @@ func (b *board) ensureGridSize(w, h int) {
 
 	if xDelta > 0 {
 		// extend existing rows
-		for i, row := range b.cells {
-			b.cells[i] = append(row, make([]bool, xDelta)...)
+		for i := range b.cells {
+			b.cells[i] = append(b.cells[i], make([]bool, xDelta)...)
+			b.nextGenCells[i] = append(b.nextGenCells[i], make([]bool, xDelta)...)
 		}
 	}
 
 	if yDelta > 0 {
 		// add empty rows
 		b.cells = append(b.cells, make([][]bool, yDelta)...)
+		b.nextGenCells = append(b.nextGenCells, make([][]bool, yDelta)...)
 		for y := b.height; y < h; y++ {
 			b.cells[y] = make([]bool, w)
+			b.nextGenCells[y] = make([]bool, w)
 		}
 	}
 
@@ -160,7 +162,7 @@ func (b *board) load() {
 }
 
 func newBoard(minX, minY int) *board {
-	b := &board{}
+	b := &board{ch: make(chan bool)}
 	b.createGrid(minX, minY)
 
 	return b
