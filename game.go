@@ -8,14 +8,12 @@ import (
 
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/canvas"
-	"fyne.io/fyne/v2/layout"
+	"fyne.io/fyne/v2/container"
 	"fyne.io/fyne/v2/theme"
 	"fyne.io/fyne/v2/widget"
 )
 
-const (
-	cellSize = 8
-)
+const cellSize = 8
 
 type gameRenderer struct {
 	render   *canvas.Raster
@@ -38,12 +36,8 @@ func (g *gameRenderer) Layout(size fyne.Size) {
 }
 
 func (g *gameRenderer) ApplyTheme() {
-	g.aliveColor = theme.TextColor()
+	g.aliveColor = theme.ForegroundColor()
 	g.deadColor = theme.BackgroundColor()
-}
-
-func (g *gameRenderer) BackgroundColor() color.Color {
-	return theme.BackgroundColor()
 }
 
 func (g *gameRenderer) Refresh() {
@@ -108,14 +102,6 @@ func (g *game) cellForCoord(x, y int, density float32) (int, int) {
 	return xpos, ypos
 }
 
-func (g *game) run() {
-	g.paused = false
-}
-
-func (g *game) stop() {
-	g.paused = true
-}
-
 func (g *game) toggleRun() {
 	g.paused = !g.paused
 }
@@ -124,17 +110,14 @@ func (g *game) animate() {
 	go func() {
 		tick := time.NewTicker(time.Second / 6)
 
-		for {
-			select {
-			case <-tick.C:
-				if g.paused {
-					continue
-				}
-
-				g.board.nextGen()
-				g.updateGeneration()
-				g.Refresh()
+		for range tick.C {
+			if g.paused {
+				continue
 			}
+
+			g.board.nextGen()
+			g.updateGeneration()
+			g.Refresh()
 		}
 	}()
 }
@@ -173,8 +156,8 @@ func (g *game) buildUI() fyne.CanvasObject {
 		}
 	})
 
-	title := fyne.NewContainerWithLayout(layout.NewGridLayout(2), g.genText, pause)
-	return fyne.NewContainerWithLayout(layout.NewBorderLayout(title, nil, nil, nil), title, g)
+	title := container.NewGridWithColumns(2, g.genText, pause)
+	return container.NewBorder(title, nil, nil, nil, g)
 }
 
 func (g *game) updateGeneration() {
