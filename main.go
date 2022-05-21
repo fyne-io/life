@@ -1,3 +1,5 @@
+//go:generate fyne bundle -o data.go Icon.png
+
 // Package main launches the life app
 package main
 
@@ -17,7 +19,6 @@ func show(app fyne.App) {
 	game := newGame(board)
 
 	window := app.NewWindow("Life")
-	window.SetIcon(resourceIconPng)
 
 	window.SetContent(game.buildUI())
 	window.Canvas().SetOnTypedRune(game.typedRune)
