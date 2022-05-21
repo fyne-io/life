@@ -7,17 +7,14 @@ type board struct {
 }
 
 func (b *board) ifAlive(x, y int) int {
-	if x < 0 || x >= b.width {
-		return 0
-	}
-
-	if y < 0 || y >= b.height {
+	if x < 0 || x >= b.width || y < 0 || y >= b.height {
 		return 0
 	}
 
 	if b.cells[y][x] {
 		return 1
 	}
+
 	return 0
 }
 
