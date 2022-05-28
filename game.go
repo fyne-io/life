@@ -64,7 +64,7 @@ func (g *gameRenderer) draw(w, h int) image.Image {
 
 	for y := 0; y < pixH; y++ {
 		for x := 0; x < pixW; x++ {
-			if x < g.game.board.width && y < g.game.board.height && g.game.board.cells[y][x] {
+			if x < g.game.board.width && y < g.game.board.height && g.game.board.currentGenCells[y][x] {
 				img.Set(x, y, g.aliveColor)
 			} else {
 				img.Set(x, y, g.deadColor)
@@ -136,7 +136,7 @@ func (g *game) Tapped(ev *fyne.PointEvent) {
 		return
 	}
 
-	g.board.cells[ypos][xpos] = !g.board.cells[ypos][xpos]
+	g.board.currentGenCells[ypos][xpos] = !g.board.currentGenCells[ypos][xpos]
 
 	g.Refresh()
 }
