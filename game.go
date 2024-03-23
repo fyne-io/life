@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"image"
 	"image/color"
-	"time"
+	"math"
 
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/canvas"
@@ -107,19 +107,19 @@ func (g *game) toggleRun() {
 }
 
 func (g *game) animate() {
-	go func() {
-		tick := time.NewTicker(time.Second / 6)
-
-		for range tick.C {
-			if g.paused {
-				continue
-			}
-
+	frameMod4 := 0 // draw only every fourth tick (15 fps)
+	anim := fyne.NewAnimation(math.MaxInt64 /*max dur. - 290 years*/, func(_ float32) {
+		if g.paused {
+			return
+		}
+		if frameMod4 == 0 {
 			g.board.nextGen()
 			g.updateGeneration()
 			g.Refresh()
 		}
-	}()
+		frameMod4 = (frameMod4 + 1) % 4
+	})
+	anim.Start()
 }
 
 func (g *game) typedRune(r rune) {
